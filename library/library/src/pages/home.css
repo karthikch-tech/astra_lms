@@ -1,0 +1,184 @@
+/* =====================================
+   HERO SECTION
+===================================== */
+.hero-section {
+  height: 100vh;
+  width: 100%;
+  background-image: url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.overlay {
+  background: 
+ rgba(6, 19, 53, 0.644),
+      rgba(89, 28, 135, 0.301)
+   !important;
+}
+.hero {
+  text-align: center;
+  color: white;
+  width: 100%;
+}
+
+.hero h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.hero p {
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+/* =====================================
+   SEARCH BAR
+===================================== */
+.search-container {
+  width: 550px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  background: #f0efef;
+  border-radius: 50px;
+  padding: 6px 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: 0.3s ease;
+}
+
+.search-container:focus-within {
+  transform: scale(1.03);
+}
+
+.search-container input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  padding: 12px;
+  border-radius: 50px;
+}
+
+.search-container button {
+  border: none;
+  background: #533383;
+  color: #111;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.search-container button:hover {
+  background: #4c376d;
+  color: white;
+}
+
+/* =====================================
+   SAME AS ADMIN BOOK CARD LAYOUT
+===================================== */
+.books-section {
+  padding: 80px 0;
+  background: #f0efef;
+}
+
+.books-section h2 {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+/* FIXED WIDTH GRID */
+.booksGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 240px);
+  justify-content: center;
+  gap: 30px;
+}
+
+/* CARD */
+.bookCard {
+  background: rgba(104, 104, 104, 0.301);
+  border-radius: 14px;
+  padding: 10px 10px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bookCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(43, 43, 43, 0.15);
+}
+
+/* IMAGE */
+.bookImage {
+  margin-bottom: 10px;
+}
+
+.bookImage img {
+  width: 150px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 18px;
+}
+
+/* TEXT */
+.bookBody h3 {
+  font-size: 17px;
+  margin-bottom: 8px;
+  color: #161616;
+}
+
+.bookBody p {
+  font-size: 13px;
+  margin: 4px 0;
+  color: #0f0f0f;
+}
+
+/* BUTTON */
+.bookFooter {
+  margin-top: 15px;
+}
+
+.viewBtn {
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: #111827;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.viewBtn:hover {
+  background: #374151;
+}
+
+/* =====================================
+   DASHBOARD BUTTON
+===================================== */
+.dashboard-btn {
+  margin-top: 20px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid #4da3ff;
+  background: transparent;
+  color: #4da3ff;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.dashboard-btn:hover {
+  background: #4da3ff;
+  color: white;
+}

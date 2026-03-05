@@ -1,0 +1,9 @@
+.results {
+  padding: 30px;
+}
+
+.book-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 15px;
+}

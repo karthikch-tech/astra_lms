@@ -1,0 +1,175 @@
+.page {
+  min-height: 100vh;
+  background-image:
+    linear-gradient(
+      135deg,
+       rgba(30, 40, 65, 0.644),
+      rgba(88, 28, 135, 0.85)
+    ),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  
+}
+
+.container {
+  width: 600px;
+  background: rgba(22, 22, 22, 0.479);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 40px;
+  color: white;
+  box-shadow: 0 25px 60px rgba(17, 17, 17, 0.6);
+}
+
+.container h1 {
+  margin-bottom: 30px;
+  color: white;
+  text-align: center;
+}
+
+/* Form Layout - 2 Column Grid */
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* Make inputs look clean */
+.form input,
+.form textarea,
+.form select {
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 14px;
+}
+
+/* Description - Full Width */
+.form textarea {
+  grid-column: span 2;   /* makes it full width */
+  height: 150px;         /* taller */
+  resize: none;
+}
+
+.categoryField {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categorySelect {
+  width: 100%;
+}
+
+.addCategoryRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.addCategoryRow input {
+  min-width: 0;
+}
+
+/* Image preview full width */
+.preview {
+  grid-column: span 2;
+  text-align: center;
+}
+
+/* Submit button full width */
+.submitButton {
+  grid-column: span 2;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #6d28d9;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.submitButton:hover {
+  background: #4c1d95;
+}
+
+.addCategoryButton {
+  border: none;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: #6d28d9;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.addCategoryButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.preview {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.preview img {
+  width: 150px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 10px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+/* Remove arrows in Chrome, Edge, Safari */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove arrows in Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Hide default file input */
+.fileInput {
+  display: none;
+}
+
+/* Custom upload button */
+.uploadLabel {
+  display: inline-block;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 15px;
+}
+
+.uploadLabel:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #6d28d9, #4c1d95);
+}
+
+.uploadLabel:active {
+  transform: scale(0.97);
+}

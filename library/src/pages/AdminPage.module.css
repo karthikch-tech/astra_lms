@@ -1,0 +1,230 @@
+/* ===============================
+   FULL PAGE BACKGROUND
+================================= */
+.dashboard {
+  min-height: 100vh;
+  background-image:
+    linear-gradient(
+      135deg,
+      rgba(30, 40, 65, 0.644),
+      rgba(88, 28, 135, 0.85)
+    ),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 80px 0;
+   display: flex;
+   flex-direction: column;
+  
+  color: white;
+  animation: slideUp 0.8s ease forwards;
+}
+
+/* ===============================
+   PAGE TITLE
+================================= */
+.heading {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+}
+
+/* ===============================
+   SEARCH BAR
+================================= */
+.searchWrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+
+.search {
+  width: 500px;
+  max-width: 90%;
+  padding: 16px;
+  border-radius: 40px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  display: block;
+  margin: 40px auto 60px auto;  /* THIS CENTERS IT */
+}
+/* ===============================
+   STATS GRID
+================================= */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 240px);
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 70px;
+}
+
+/* ===============================
+   STATS CARD
+================================= */
+.card {
+  padding: 20px;
+  border-radius: 18px;
+  text-align: center;
+  transition: 0.3s ease;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  background: rgba(0, 0, 0, 0.65);
+  box-shadow: 0 15px 30px rgba(20, 20, 20, 0.4);
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+}
+
+.card p {
+  margin-top: 15px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #e9d5ff;
+}
+
+/* ===============================
+   ADD BOOK BUTTON
+================================= */
+.addButtonWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+
+.addButton {
+  padding: 14px 50px;
+  border-radius: 12px;
+  border: none;
+  background: #6d28d9;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  margin-bottom: 100px;
+}
+
+.addButton:hover {
+  background: #4c1d95;
+  transform: translateY(-4px);
+}
+
+/* ===============================
+   BADGES
+================================= */
+.badgeGreen {
+  background: #22c55e;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: black;
+  font-weight: 500;
+}
+
+.badgeRed {
+  background: #ef4444;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+}
+
+/* =====================================================
+   CLEAN PROFESSIONAL BOOK CARD GRID (FIXED WIDTH)
+===================================================== */
+.booksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 240px);
+  justify-content: center;
+  gap: 30px;
+}
+
+/* =====================================================
+   BOOK CARD
+===================================================== */
+.bookCard {
+  background: rgba(54, 54, 54, 0.521);
+  border-radius: 14px;
+  padding: 25px 20px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bookCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+}
+
+/* BOOK IMAGE */
+.bookImage {
+  margin-bottom: 10px;
+}
+
+.bookImage img {
+  width: 150px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* BOOK INFO */
+.bookBody h3 {
+  font-size: 17px;
+  margin-bottom: 8px;
+  color: #dad6d6;
+}
+
+.bookBody p {
+  font-size: 13px;
+  margin: 4px 0;
+  color: #cecaca;
+}
+
+
+
+/* BUTTON */
+.bookFooter {
+  margin-top: 15px;
+}
+
+.viewBtn {
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: #111827;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.viewBtn:hover {
+  background: #9ab9ec;
+  color: #080808;
+}
+
+/* ===============================
+   RESPONSIVE
+================================= */
+@media (max-width: 768px) {
+  .search {
+    width: 100%;
+  }
+}

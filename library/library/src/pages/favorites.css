@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+.favorites-page {
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* HERO */
+.hero-section {
+  height: 100vh;
+  background-image: url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.overlay {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(120, 40, 120, 0.7),
+    rgba(120, 40, 120, 0.7)
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero {
+  text-align: center;
+  color: rgb(14, 13, 13);
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+/* BOOK SECTION */
+.favorites-books {
+  background: #f5ebb6;
+  padding: 100px 10%;
+  text-align: center;
+}
+
+.favorites-books h2 {
+  margin-bottom: 40px;
+}
+
+/* GRID */
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+}
+
+/* CARD */
+.book-card h3 {
+  color: black;
+}
+
+.book-card p {
+  color: black;
+}
+
+.book-card:hover {
+  transform: translateY(-10px);
+}
+
+.book-cover {
+  height: 150px;
+  background: linear-gradient(135deg, #0a0a0a, #0a0a0a);
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.view-btn {
+  background: #111;
+  color: rgb(226, 224, 224);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+h1 {
+    color: black;
+}
+
+h2 {
+    color: black;
+}

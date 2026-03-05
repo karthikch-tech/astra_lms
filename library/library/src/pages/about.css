@@ -1,0 +1,41 @@
+.about-page {
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero-section {
+  height: 100vh;
+  background-image: url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+}
+
+.overlay {
+  background: 
+  rgba(89, 28, 135, 0.644)
+   !important;
+}
+.hero {
+  text-align: center;
+  color: beige;
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+/* CONTENT */
+.about-content {
+  background: #d6cc9c;
+  padding: 100px 10%;
+  display: grid;
+  gap: 40px;
+}
+
+.about-card {
+  background: lightblue;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}

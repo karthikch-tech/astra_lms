@@ -1,0 +1,89 @@
+/* =============================== */
+/* EXACT BOOKSTORE STYLE CARD     */
+/* =============================== */
+
+.booksGrid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 240px);
+  justify-content: start;   /* important */
+  gap: 30px;
+
+  padding-left: 180px;      /* 👈 increase this */
+  animation: slideUp 0.8s ease forwards;
+}
+
+.books-section {
+  padding: 80px 120px;  /* left-right spacing */
+}
+/* CARD */
+.book-card {
+  border: 3px solid red;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* IMAGE */
+/* FORCE SMALL BOOK COVER */
+
+.book-card-image {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.book-card-image img {
+  width: 140px !important;
+  height: 210px !important;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* BODY */
+.book-card-body {
+  flex-grow: 1;
+}
+
+.book-card-body h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #111;
+}
+
+.book-card-body p {
+  font-size: 13px;
+  color: #555;
+  margin: 3px 0;
+}
+
+.book-card-body .year {
+  font-style: italic;
+  color: #777;
+  margin-top: 5px;
+}
+
+/* BUTTON */
+.book-card-footer {
+  margin-top: 15px;
+}
+
+.view-details-btn {
+  padding: 6px 16px;
+  border-radius: 18px;
+  border: none;
+  background: #111;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.view-details-btn:hover {
+  background: #333;
+}

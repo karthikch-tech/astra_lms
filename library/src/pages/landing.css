@@ -1,0 +1,79 @@
+.landing-container {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+
+  /* Background Image + Linear Gradient Overlay */
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.85),
+      rgba(88, 28, 135, 0.85)
+    ),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  font-family: "Poppins", sans-serif;
+  color: white;
+  overflow: hidden;
+}
+
+/* Logo Top Left */
+.landing-logo {
+  position: absolute;
+  top: 25px;
+  left: 40px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* Center Content */
+.landing-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.landing-content h1 {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.highlight {
+  color: #a5b4fc;
+}
+
+.landing-content p {
+  margin-top: 20px;
+  font-size: 18px;
+  max-width: 600px;
+  color: #e5e7eb;
+}
+
+.landing-btn {
+  margin-top: 35px;
+  padding: 14px 34px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(90deg, #7c3aed, #a5b4fc);
+  transition: all 0.3s ease;
+}
+
+.landing-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(165, 180, 252, 0.4);
+}

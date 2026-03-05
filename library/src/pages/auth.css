@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+.auth {
+  height: 100vh;
+  width: 100%;
+  background-image: url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+/* Overlay */
+.overlay {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(193, 148, 228, 0.8),
+    rgba(197, 151, 231, 0.8)
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  animation: fadeIn 1s ease forwards;
+}
+
+/* Glass Card */
+.auth-card {
+  width: 400px;
+  background: rgba(73, 73, 73, 0.541);
+  backdrop-filter: blur(15px);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  color: rgb(17, 17, 17);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.8s ease forwards;
+}
+
+.auth-card h1 {
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.auth-card input:focus {
+  box-shadow: 0 0 0 2px #9ceeb7;
+}
+
+/* Button */
+.auth-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #f4f2f5;
+  color: rgb(8, 8, 8);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.auth-btn:hover {
+  background: #1312139a;
+  color: rgb(238, 232, 232);
+}
+
+.auth-card p {
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.auth-card a {
+  color: #9ceeb7;
+  text-decoration: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

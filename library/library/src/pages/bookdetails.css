@@ -1,0 +1,523 @@
+/* ============================= */
+/* BASE CONTAINER */
+/* ============================= */
+
+.book-details {
+  min-height: 100vh;
+  padding: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.4s ease;
+  color: white;
+}
+
+/* USER VIEW BACKGROUND */
+.user-view {
+  background:
+    linear-gradient(
+      rgba(236, 155, 232, 0.65),
+      rgba(226, 130, 229, 0.65)
+    ),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+}
+.user-view .details-right {
+  display: flex;
+  flex-direction: column;
+  gap: --15px;
+}
+
+.user-view .description {
+  margin-top: 15px;
+}
+
+/* ADMIN VIEW BACKGROUND */
+.admin-view {
+  background:
+    linear-gradient(
+       rgba(30, 40, 65, 0.644),
+      rgba(88, 28, 135, 0.85)
+    ),
+    url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f");
+  background-size: cover;
+  background-position: center;
+}
+
+/* ============================= */
+/* GLASS CARD */
+/* ============================= */
+
+.details-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: auto;
+  display: flex;
+  gap: 50px;
+  padding: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  background: rgba(36, 35, 35, 0.582);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  transition: 0.3s ease;
+}
+
+/* ============================= */
+/* LEFT SIDE */
+/* ============================= */
+
+.details-left {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.book-image {
+  width: 100%;
+  max-width: 420px;   /* 🔥 increased width */
+  height: 550px;      /* slightly taller */
+  border-radius: 18px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+}
+
+.book-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: #aaa;
+}
+/* ============================= */
+/* RIGHT SIDE */
+/* ============================= */
+
+.details-left {
+  flex: 1.3;
+}
+
+.details-right {
+  flex: 1.7;
+}
+
+.book-image {
+  width: 300px;
+  aspect-ratio: 2 / 3;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+}
+
+.details-right h1 {
+  font-size: 34px;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+
+.book-info {
+  margin-bottom: 12px;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.book-info span {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.description {
+  margin-top: 10px;
+  line-height: 1.7;
+  color: #e6e3e3;
+  font-size: 15px;
+}
+
+/* ============================= */
+/* PREVIEW BUTTON */
+/* ============================= */
+
+.image-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.preview-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border: none;
+  background: #111;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s ease;
+  width: 260px;
+}
+
+.preview-btn:hover {
+  background: #333;
+  transform: translateY(-3px);
+}
+
+/* ============================= */
+/* ADMIN BUTTONS */
+/* ============================= */
+
+.admin-actions {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  width: 100%;
+}
+
+.btn {
+  padding: 8px 16px;
+  height: 40px;
+  min-width: 110px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+/* Add Copies */
+.btn-primary {
+  background-color: #111;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1f1f1f;
+  transform: translateY(-2px);
+}
+
+/* Update */
+.btn-secondary {
+  background-color: #1a1a1a;
+  color: #eaeaec;
+}
+
+.btn-secondary:hover {
+  background-color: #2a2a2a;
+  transform: translateY(-2px);
+}
+
+/* Delete */
+.btn-danger {
+  background-color: #020202;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #f3e9e9;
+  transform: translateY(-2px);
+  color: black;
+}
+
+/* ============================= */
+/* COPY INPUT SECTION */
+/* ============================= */
+
+.copy-section {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.copy-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.copy-row input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  flex: 1;
+  outline: none;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.cross-btn {
+  background: #222;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.cross-btn:hover {
+  background: #111;
+}
+
+.btn-add-copyid {
+  background: #141414;
+  color: white;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-add-copyid:hover {
+  background: #222;
+}
+
+/* ============================= */
+/* PREVIEW MODAL */
+/* ============================= */
+
+.preview-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.preview-content {
+  width: 85%;
+  max-width: 1000px;
+  height: 85%;
+  background: #000;
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+}
+
+.preview-content iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgb(236, 235, 235);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+@media (max-width: 900px) {
+  .details-container {
+    flex-direction: column;
+  }
+
+  .book-image {
+    height: 400px;
+  }
+}
+/* ============================= */
+/* PREMIUM COPIES MENU */
+/* ============================= */
+
+.copies-menu::before {
+  content: "";
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  border-radius: 10px;
+  margin-bottom: 5px;
+}
+
+
+.copies-menu {
+  flex-basis: 100%;              /* stay below buttons */
+  margin-top: 12px;
+  padding: 18px 20px;            /* 🔥 reduced size */
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  animation: slideDown 0.25s ease;
+  max-width: 500px;              /* 🔥 keeps card aligned to buttons */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth appearance */
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================= */
+/* ADD COPY BOX */
+/* ============================= */
+
+.copy-box {
+  display: flex;
+  gap: 12px;
+}
+
+.copy-box input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  outline: none;
+  transition: 0.3s ease;
+}
+
+.copy-box input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 2px #a855f7;
+}
+
+/* ============================= */
+/* COPY UPDATE LIST */
+/* ============================= */
+
+.copy-update-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================= */
+/* COPY ROW */
+/* ============================= */
+
+.copy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: 0.3s ease;
+}
+
+.copy-id {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.copy-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================= */
+/* SMALLER TOGGLE BUTTON */
+/* ============================= */
+
+.toggle-btn {
+  padding: 4px 10px;        /* smaller */
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;          /* smaller text */
+  font-weight: 600;
+  transition: 0.25s ease;
+  min-width: 85px;
+}
+
+.toggle-btn.available {
+  background: #344f57;
+  color: white;
+}
+
+.toggle-btn.unavailable {
+  background: #380b05;
+  color: white;
+}
+
+.toggle-btn:hover {
+  transform: scale(1.05);
+}
+
+/* ============================= */
+/* DELETE COPY BUTTON */
+/* ============================= */
+
+.delete-copy-btn {
+  background: rgba(5, 5, 5, 0.15);
+  color: #0c0c0c;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: 0.25s ease;
+}
+
+.delete-copy-btn:hover {
+  background: #080808;
+  color: white;
+}
+
+/* ============================= */
+/* ADD BUTTON */
+/* ============================= */
+
+.btn-success {
+  background: linear-gradient(135deg, #91e8eb, #11644f);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(24, 24, 24, 0.4);
+}
