@@ -40,7 +40,7 @@ const corsOptions = allowedOrigins.length
     };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options( cors(corsOptions));
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
