@@ -1,11 +1,18 @@
 const pool = require('../config/db');
-const { callProcedure } = require('../config/db');
 
 const getAllCategories = async (req, res, next) => {
   try {
-    const categories = await callProcedure('sp_categories_get_all');
+    const [rows] = await pool.query(
+      `
+        SELECT
+          category_id AS id,
+          category_name AS name
+        FROM categories
+        ORDER BY category_name ASC
+      `
+    );
 
-    res.status(200).json(categories);
+    res.status(200).json(rows);
   } catch (error) {
     next(error);
   }
@@ -23,14 +30,40 @@ const createCategory = async (req, res, next) => {
 
     connection = await pool.getConnection();
 
-    const existing = await callProcedure('sp_categories_find_by_name', [name], connection);
+    const [existingRows] = await connection.query(
+      `
+        SELECT category_id
+        FROM categories
+        WHERE LOWER(category_name) = LOWER(?)
+        LIMIT 1
+      `,
+      [String(name).trim()]
+    );
 
-    if (existing.length > 0) {
+    if (existingRows.length > 0) {
       return res.status(409).json({ message: 'Category already exists' });
     }
 
-    const createdCategories = await callProcedure('sp_categories_create', [name], connection);
-    const createdCategory = createdCategories[0];
+    const [result] = await connection.query(
+      `
+        INSERT INTO categories (category_name)
+        VALUES (?)
+      `,
+      [String(name).trim()]
+    );
+
+    const [createdRows] = await connection.query(
+      `
+        SELECT
+          category_id AS id,
+          category_name AS name
+        FROM categories
+        WHERE category_id = ?
+        LIMIT 1
+      `,
+      [result.insertId]
+    );
+    const createdCategory = createdRows[0];
 
     res.status(201).json({ id: createdCategory.id, name: createdCategory.name });
   } catch (error) {

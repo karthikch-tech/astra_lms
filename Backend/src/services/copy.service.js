@@ -3,60 +3,152 @@ const { callProcedure } = require('../config/db');
 
 const CLIENT_AVAILABLE_STATUS = 'AVAILABLE';
 const CLIENT_UNAVAILABLE_STATUS = 'UNAVAILABLE';
+const MYSQL_INT_MAX = 2147483647;
+const COPY_ID_PATTERN = /^\d+$/;
 
 const normalizeStatus = (status) => String(status || '').trim().toUpperCase();
 const normalizeCopyCode = (copyCode) => String(copyCode || '').trim();
+const isValidMysqlInt = (value) => Number.isInteger(value) && value > 0 && value <= MYSQL_INT_MAX;
+
+const parseCopyId = (rawCopyId) => {
+  const normalizedCopyId = normalizeCopyCode(rawCopyId);
+  if (!normalizedCopyId || !COPY_ID_PATTERN.test(normalizedCopyId)) {
+    return null;
+  }
+
+  const parsedCopyId = Number(normalizedCopyId);
+  return isValidMysqlInt(parsedCopyId) ? parsedCopyId : null;
+};
 
 const toClientStatus = (dbStatus) => (
-  normalizeStatus(dbStatus) === CLIENT_AVAILABLE_STATUS
+  String(dbStatus || '').trim().toLowerCase() === 'available'
     ? CLIENT_AVAILABLE_STATUS
     : CLIENT_UNAVAILABLE_STATUS
 );
 
 const toDatabaseStatus = (clientStatus) => (
   normalizeStatus(clientStatus) === CLIENT_AVAILABLE_STATUS
-    ? CLIENT_AVAILABLE_STATUS
-    : 'GIVEN'
+    ? 'available'
+    : 'unavailable'
 );
 
 const mapCopyToClient = (copy) => ({
-  ...copy,
+  id: Number(copy.copy_id),
+  book_id: Number(copy.book_id),
+  copy_code: String(copy.copy_id),
   status: toClientStatus(copy.status),
 });
 
-const addBookCopies = async (bookId, copyIds) => {
-  const connection = await pool.getConnection();
-  
-  try {
-    const books = await callProcedure('sp_books_exists_active', [bookId], connection);
+const mapProcedureMessageToError = (message) => {
+  const normalizedMessage = String(message || '').toLowerCase();
+  if (normalizedMessage.includes('access denied')) {
+    return 403;
+  }
+  if (normalizedMessage.includes('unauthorized')) {
+    return 401;
+  }
+  if (normalizedMessage.includes('not found')) {
+    return 404;
+  }
+  return 400;
+};
 
-    if (books.length === 0) {
-      throw { status: 404, message: 'Book not found' };
+const getNextCopyId = async (executor = pool) => {
+  const [rows] = await executor.query(
+    `
+      SELECT COALESCE(MAX(copy_id), 0) + 1 AS next_copy_id
+      FROM book_copies
+    `
+  );
+
+  const nextCopyId = Number(rows[0]?.next_copy_id || 1);
+  return isValidMysqlInt(nextCopyId) ? nextCopyId : null;
+};
+
+const getCopyById = async (copyId, executor = pool) => {
+  const normalizedCopyId = Number(copyId);
+  if (!isValidMysqlInt(normalizedCopyId)) {
+    return null;
+  }
+
+  const [rows] = await executor.query(
+    `
+      SELECT copy_id, book_id, status
+      FROM book_copies
+      WHERE copy_id = ?
+      LIMIT 1
+    `,
+    [normalizedCopyId]
+  );
+
+  return rows[0] || null;
+};
+
+const addBookCopies = async (bookId, copyIds, loggedUserId) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const results = [];
+    let nextAutoCopyId = await getNextCopyId(connection);
+
+    if (!nextAutoCopyId) {
+      throw { status: 500, message: 'Unable to allocate copy IDs. Reached maximum INT range.' };
     }
 
-    const results = [];
+    for (const rawCopyCode of copyIds) {
+      const parsedCopyId = parseCopyId(rawCopyCode);
+      let copyIdToInsert = parsedCopyId;
 
-    for (const copyCode of copyIds) {
-      const existingCopy = await callProcedure('sp_copies_find_by_code', [copyCode], connection);
+      if (!copyIdToInsert) {
+        copyIdToInsert = nextAutoCopyId;
+        nextAutoCopyId += 1;
 
-      if (existingCopy.length > 0) {
-        results.push({ copyCode, status: 'FAILED', message: 'Copy code already exists' });
+        if (!isValidMysqlInt(copyIdToInsert)) {
+          results.push({
+            copyCode: '',
+            status: 'FAILED',
+            message: 'Unable to allocate copy ID. Reached maximum INT range.',
+          });
+          continue;
+        }
+      } else if (copyIdToInsert >= nextAutoCopyId) {
+        nextAutoCopyId = copyIdToInsert + 1;
+      }
+
+      const rows = await callProcedure(
+        'add_book_copy',
+        [Number(loggedUserId), Number(bookId), String(copyIdToInsert)],
+        connection
+      );
+      const procedureResult = rows[0] || {};
+      const errorMessage = procedureResult.error_message || (
+        !/success/i.test(String(procedureResult.message || ''))
+          ? procedureResult.message
+          : ''
+      );
+
+      if (errorMessage) {
+        results.push({ copyCode: String(copyIdToInsert), status: 'FAILED', message: errorMessage });
         continue;
       }
 
-      const createdCopies = await callProcedure(
-        'sp_copies_create',
-        [bookId, copyCode, 'AVAILABLE', 0],
-        connection
-      );
-      const createdCopy = createdCopies[0];
+      const createdCopyId = parseCopyId(procedureResult.copy_id) || copyIdToInsert;
+      const createdCopy = await getCopyById(createdCopyId, connection);
+
+      if (!createdCopy) {
+        results.push({
+          id: Number(createdCopyId),
+          book_id: Number(bookId),
+          copy_code: String(createdCopyId),
+          status: CLIENT_AVAILABLE_STATUS,
+          message: procedureResult.message || 'Book copy added successfully',
+        });
+        continue;
+      }
 
       results.push({
-        id: createdCopy.id,
-        bookId: createdCopy.book_id,
-        copyCode: createdCopy.copy_code,
-        status: toClientStatus(createdCopy.status),
-        message: 'Copy added successfully',
+        ...mapCopyToClient(createdCopy),
+        message: procedureResult.message || 'Book copy added successfully',
       });
     }
 
@@ -67,121 +159,174 @@ const addBookCopies = async (bookId, copyIds) => {
 };
 
 const getBookCopies = async (bookId) => {
-  const copies = await callProcedure('sp_copies_get_by_book', [bookId]);
-  return copies.map(mapCopyToClient);
+  const normalizedBookId = Number(bookId);
+  if (!Number.isInteger(normalizedBookId) || normalizedBookId <= 0) {
+    throw { status: 400, message: 'Invalid book ID' };
+  }
+
+  const [rows] = await pool.query(
+    `
+      SELECT copy_id, book_id, status
+      FROM book_copies
+      WHERE book_id = ?
+      ORDER BY copy_id ASC
+    `,
+    [normalizedBookId]
+  );
+
+  return rows.map(mapCopyToClient);
 };
 
-const updateCopyStatus = async (copyId, newStatus) => {
-  const connection = await pool.getConnection();
-  
-  try {
-    const validStatuses = [CLIENT_AVAILABLE_STATUS, CLIENT_UNAVAILABLE_STATUS];
-    const requestedStatus = normalizeStatus(newStatus);
-
-    if (!validStatuses.includes(requestedStatus)) {
-      throw { status: 400, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` };
-    }
-
-    const copies = await callProcedure('sp_copies_get_by_id', [copyId], connection);
-
-    if (copies.length === 0) {
-      throw { status: 404, message: 'Book copy not found' };
-    }
-
-    const copy = copies[0];
-    const currentStatus = toClientStatus(copy.status);
-
-    if (currentStatus === requestedStatus) {
-      throw { status: 400, message: 'Copy already has this status' };
-    }
-
-    const updatedCopies = await callProcedure(
-      'sp_copies_update_status',
-      [copyId, toDatabaseStatus(requestedStatus)],
-      connection
-    );
-    const updatedCopy = updatedCopies[0];
-
-    return {
-      id: updatedCopy.id,
-      bookId: updatedCopy.book_id,
-      copyCode: updatedCopy.copy_code,
-      status: toClientStatus(updatedCopy.status),
-    };
-  } finally {
-    connection.release();
+const updateCopyStatus = async (copyId, newStatus, loggedUserId) => {
+  const normalizedCopyId = parseCopyId(copyId);
+  if (!normalizedCopyId) {
+    throw { status: 400, message: 'Copy ID must be a positive number' };
   }
+
+  const requestedStatus = normalizeStatus(newStatus);
+  const validStatuses = [CLIENT_AVAILABLE_STATUS, CLIENT_UNAVAILABLE_STATUS];
+
+  if (!validStatuses.includes(requestedStatus)) {
+    throw { status: 400, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` };
+  }
+
+  const rows = await callProcedure(
+    'update_book_copy_status',
+    [Number(loggedUserId), normalizedCopyId, toDatabaseStatus(requestedStatus)]
+  );
+  const procedureResult = rows[0] || {};
+
+  if (!/success/i.test(String(procedureResult.message || ''))) {
+    throw {
+      status: mapProcedureMessageToError(procedureResult.message),
+      message: procedureResult.message || 'Failed to update copy status',
+    };
+  }
+
+  const updatedCopy = await getCopyById(normalizedCopyId);
+  if (!updatedCopy) {
+    throw { status: 404, message: 'Book copy not found' };
+  }
+
+  return mapCopyToClient(updatedCopy);
 };
 
 const updateCopyCode = async (copyId, newCopyCode) => {
   const connection = await pool.getConnection();
 
   try {
-    const normalizedCopyCode = normalizeCopyCode(newCopyCode);
-    if (!normalizedCopyCode) {
-      throw { status: 400, message: 'Copy code is required' };
+    const normalizedCurrentCopyId = parseCopyId(copyId);
+    const normalizedNewCopyId = parseCopyId(newCopyCode);
+
+    if (!normalizedCurrentCopyId || !normalizedNewCopyId) {
+      throw { status: 400, message: 'Copy ID must be a positive number' };
     }
 
-    const copies = await callProcedure('sp_copies_get_by_id', [copyId], connection);
-
-    if (copies.length === 0) {
+    const currentCopy = await getCopyById(normalizedCurrentCopyId, connection);
+    if (!currentCopy) {
       throw { status: 404, message: 'Book copy not found' };
     }
 
-    const currentCopy = copies[0];
-    if (currentCopy.copy_code === normalizedCopyCode) {
-      throw { status: 400, message: 'Copy code is the same; cannot be updated' };
+    if (Number(currentCopy.copy_id) === normalizedNewCopyId) {
+      throw { status: 400, message: 'Copy ID is the same; cannot be updated' };
     }
 
-    const duplicateCopies = await callProcedure('sp_copies_find_by_code', [normalizedCopyCode], connection);
-    if (duplicateCopies.length > 0 && Number(duplicateCopies[0].id) !== Number(copyId)) {
-      throw { status: 409, message: 'Copy code already exists' };
+    const duplicateCopy = await getCopyById(normalizedNewCopyId, connection);
+    if (duplicateCopy) {
+      throw { status: 409, message: 'Copy ID already exists' };
     }
 
-    const updatedCopies = await callProcedure(
-      'sp_copies_update_code',
-      [copyId, normalizedCopyCode],
-      connection
+    await connection.query(
+      `
+        UPDATE book_copies
+        SET copy_id = ?
+        WHERE copy_id = ?
+      `,
+      [normalizedNewCopyId, normalizedCurrentCopyId]
     );
-    const updatedCopy = updatedCopies[0];
 
-    return {
-      id: updatedCopy.id,
-      bookId: updatedCopy.book_id,
-      copyCode: updatedCopy.copy_code,
-      status: toClientStatus(updatedCopy.status),
-    };
+    const updatedCopy = await getCopyById(normalizedNewCopyId, connection);
+    if (!updatedCopy) {
+      throw { status: 500, message: 'Copy ID updated but row could not be loaded' };
+    }
+
+    return mapCopyToClient(updatedCopy);
   } finally {
     connection.release();
   }
 };
 
-const deleteCopy = async (copyId) => {
+const deleteCopy = async (copyId, loggedUserId) => {
   const connection = await pool.getConnection();
-  
-  try {
-    const copies = await callProcedure('sp_copies_get_by_id', [copyId], connection);
 
-    if (copies.length === 0) {
+  try {
+    const normalizedCopyId = parseCopyId(copyId);
+    if (!normalizedCopyId) {
+      throw { status: 400, message: 'Copy ID must be a positive number' };
+    }
+
+    const copy = await getCopyById(normalizedCopyId, connection);
+    if (!copy) {
       throw { status: 404, message: 'Book copy not found' };
     }
 
-    await callProcedure('sp_copies_soft_delete', [copyId], connection);
+    const rows = await callProcedure(
+      'delete_book_copy',
+      [Number(loggedUserId), Number(copy.book_id), normalizedCopyId],
+      connection
+    );
+    const procedureResult = rows[0] || {};
 
-    return { message: 'Copy deleted successfully' };
+    if (!/success/i.test(String(procedureResult.message || ''))) {
+      throw {
+        status: mapProcedureMessageToError(procedureResult.message),
+        message: procedureResult.message || 'Failed to delete copy',
+      };
+    }
+
+    return { message: procedureResult.message };
   } finally {
     connection.release();
   }
 };
 
 const searchByCallNumber = async (copyCode) => {
-  const copies = await callProcedure('sp_copies_search_with_book', [copyCode]);
+  const normalizedCopyId = parseCopyId(copyCode);
+  if (!normalizedCopyId) {
+    throw { status: 400, message: 'Copy ID must be a positive number' };
+  }
 
-  if (copies.length === 0) {
+  const [rows] = await pool.query(
+    `
+      SELECT
+        bc.copy_id AS id,
+        bc.copy_id AS copy_code,
+        bc.status,
+        bc.book_id,
+        b.title,
+        a.author_name AS author,
+        b.publisher,
+        b.language
+      FROM book_copies bc
+      JOIN books b ON b.book_id = bc.book_id
+      LEFT JOIN authors a ON a.author_id = b.author_id
+      WHERE bc.copy_id = ?
+      LIMIT 1
+    `,
+    [normalizedCopyId]
+  );
+
+  if (rows.length === 0) {
     throw { status: 404, message: 'Copy not found' };
   }
 
-  return mapCopyToClient(copies[0]);
+  return {
+    ...rows[0],
+    status: toClientStatus(rows[0].status),
+    id: Number(rows[0].id),
+    copy_code: String(rows[0].copy_code),
+    book_id: Number(rows[0].book_id),
+  };
 };
 
 module.exports = {

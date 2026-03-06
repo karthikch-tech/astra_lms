@@ -1,15 +1,16 @@
 const apiKeyMiddleware = (req, res, next) => {
-  const configuredApiKey = process.env.API_KEY;
+  const configuredApiKey = String(process.env.API_KEY || '').trim();
 
+  // Explicitly require API_KEY to be set; fail fast to avoid open access.
   if (!configuredApiKey) {
-    return next();
+    return res.status(500).json({ message: 'Server API key not configured' });
   }
 
   if (req.path === '/health') {
     return next();
   }
 
-  const incomingApiKey = req.headers['x-api-key'];
+  const incomingApiKey = String(req.headers['x-api-key'] || '').trim();
 
   if (!incomingApiKey || incomingApiKey !== configuredApiKey) {
     return res.status(401).json({ message: 'Invalid or missing API key' });

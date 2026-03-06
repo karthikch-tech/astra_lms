@@ -1,118 +1,205 @@
 const pool = require('../config/db');
 const { callProcedure } = require('../config/db');
 
-const checkBookExists = async (title, author, publisher, isbn, language, categoryId, executor = pool) => {
-  const books = await callProcedure(
-    'sp_books_find_duplicate',
-    [title, author, publisher, isbn || null, language, categoryId],
-    executor
+const mapBookRow = (row) => ({
+  id: Number(row.id ?? row.book_id),
+  title: row.title,
+  author: row.author || row.author_name,
+  publisher: row.publisher || null,
+  isbn: row.isbn || null,
+  language: row.language || null,
+  price: row.price !== undefined && row.price !== null ? Number(row.price) : null,
+  description: row.description || null,
+  category_id: row.category_id !== undefined && row.category_id !== null ? Number(row.category_id) : null,
+  category_name: row.category_name || null,
+  cover_image_url: row.cover_image_url || row.cover_image || null,
+  available_copies: Number(row.available_copies || 0),
+  total_copies: Number(row.total_copies || 0),
+});
+
+const getCategoryNameById = async (categoryId, executor = pool) => {
+  const [rows] = await executor.query(
+    `
+      SELECT category_name
+      FROM categories
+      WHERE category_id = ?
+      LIMIT 1
+    `,
+    [categoryId]
   );
 
-  return books.length > 0 ? books[0].id : null;
+  return rows[0]?.category_name || null;
 };
 
-const createBook = async (bookData) => {
-  const connection = await pool.getConnection();
-  
-  try {
-    const existingBookId = await checkBookExists(
-      bookData.title,
-      bookData.author,
-      bookData.publisher,
-      bookData.isbn,
-      bookData.language,
-      bookData.categoryId,
-      connection
-    );
+const getBookById = async (bookId, executor = pool) => {
+  const [rows] = await executor.query(
+    `
+      SELECT
+        b.book_id AS id,
+        b.title,
+        a.author_name AS author,
+        b.publisher,
+        b.isbn,
+        b.language,
+        b.price,
+        b.description,
+        b.category_id,
+        c.category_name,
+        b.cover_image AS cover_image_url,
+        COUNT(bc.copy_id) AS total_copies,
+        COALESCE(SUM(CASE WHEN LOWER(bc.status) = 'available' THEN 1 ELSE 0 END), 0) AS available_copies
+      FROM books b
+      LEFT JOIN authors a ON a.author_id = b.author_id
+      LEFT JOIN categories c ON c.category_id = b.category_id
+      LEFT JOIN book_copies bc ON bc.book_id = b.book_id
+      WHERE b.book_id = ?
+      GROUP BY
+        b.book_id,
+        b.title,
+        a.author_name,
+        b.publisher,
+        b.isbn,
+        b.language,
+        b.price,
+        b.description,
+        b.category_id,
+        c.category_name,
+        b.cover_image
+      LIMIT 1
+    `,
+    [bookId]
+  );
 
-    if (existingBookId) {
-      throw { status: 409, message: 'Same book details already exist. Add copies instead of creating new book.' };
+  if (rows.length === 0) {
+    throw { status: 404, message: 'Book not found' };
+  }
+
+  return mapBookRow(rows[0]);
+};
+
+const getAllBooks = async (filters = {}) => {
+  const conditions = [];
+  const params = [];
+
+  if (filters.title) {
+    conditions.push('b.title LIKE ?');
+    params.push(`%${String(filters.title).trim()}%`);
+  }
+
+  if (filters.author) {
+    conditions.push('a.author_name LIKE ?');
+    params.push(`%${String(filters.author).trim()}%`);
+  }
+
+  if (filters.categoryId) {
+    conditions.push('b.category_id = ?');
+    params.push(Number(filters.categoryId));
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const [rows] = await pool.query(
+    `
+      SELECT
+        b.book_id AS id,
+        b.title,
+        a.author_name AS author,
+        b.publisher,
+        b.isbn,
+        b.language,
+        b.price,
+        b.description,
+        b.category_id,
+        c.category_name,
+        b.cover_image AS cover_image_url,
+        COUNT(bc.copy_id) AS total_copies,
+        COALESCE(SUM(CASE WHEN LOWER(bc.status) = 'available' THEN 1 ELSE 0 END), 0) AS available_copies
+      FROM books b
+      LEFT JOIN authors a ON a.author_id = b.author_id
+      LEFT JOIN categories c ON c.category_id = b.category_id
+      LEFT JOIN book_copies bc ON bc.book_id = b.book_id
+      ${whereClause}
+      GROUP BY
+        b.book_id,
+        b.title,
+        a.author_name,
+        b.publisher,
+        b.isbn,
+        b.language,
+        b.price,
+        b.description,
+        b.category_id,
+        c.category_name,
+        b.cover_image
+      ORDER BY b.book_id DESC
+    `,
+    params
+  );
+
+  return rows.map(mapBookRow);
+};
+
+const createBook = async (bookData, loggedUserId) => {
+  const connection = await pool.getConnection();
+
+  try {
+    const categoryName = await getCategoryNameById(bookData.categoryId, connection);
+    if (!categoryName) {
+      throw { status: 400, message: 'Invalid category selected' };
     }
 
-    const createdBooks = await callProcedure(
-      'sp_books_create',
+    const createdRows = await callProcedure(
+      'insert_book_details',
       [
+        Number(loggedUserId),
         bookData.title,
         bookData.author,
         bookData.publisher,
         bookData.isbn || null,
         bookData.language,
         bookData.price,
-        bookData.description,
-        bookData.categoryId,
+        bookData.description || null,
+        categoryName,
         bookData.coverImageUrl || null,
-        0,
       ],
       connection
     );
 
-    return createdBooks[0];
+    const createdResult = createdRows[0] || {};
+    const procedureMessage = createdResult.message || '';
+
+    if (!createdResult.book_id || !/inserted successfully/i.test(procedureMessage)) {
+      const lowerMessage = String(procedureMessage).toLowerCase();
+      if (lowerMessage.includes('already exists')) {
+        throw { status: 409, message: procedureMessage };
+      }
+      if (lowerMessage.includes('access denied')) {
+        throw { status: 403, message: procedureMessage };
+      }
+      if (lowerMessage.includes('unauthorized')) {
+        throw { status: 401, message: procedureMessage };
+      }
+      throw { status: 400, message: procedureMessage || 'Book could not be inserted' };
+    }
+
+    return getBookById(createdResult.book_id, connection);
   } finally {
     connection.release();
   }
 };
 
-const getAllBooks = async (filters = {}) => {
-  return callProcedure('sp_books_get_all', [
-    filters.title || null,
-    filters.author || null,
-    filters.categoryId || null,
-  ]);
-};
-
-const getBookById = async (bookId) => {
-  const books = await callProcedure('sp_books_get_by_id', [bookId]);
-
-  if (books.length === 0) {
-    throw { status: 404, message: 'Book not found' };
-  }
-
-  return books[0];
-};
-
-const updateBook = async (bookId, bookData) => {
+const updateBook = async (bookId, bookData, loggedUserId) => {
   const connection = await pool.getConnection();
-  
+
   try {
-    const existingBooks = await callProcedure('sp_books_get_basic_by_id', [bookId], connection);
-
-    if (existingBooks.length === 0) {
-      throw { status: 404, message: 'Book not found' };
+    const categoryName = await getCategoryNameById(bookData.categoryId, connection);
+    if (!categoryName) {
+      throw { status: 400, message: 'Invalid category selected' };
     }
 
-    const existing = existingBooks[0];
-
-    if (
-      existing.title === bookData.title &&
-      existing.author === bookData.author &&
-      existing.publisher === bookData.publisher &&
-      existing.isbn === (bookData.isbn || null) &&
-      existing.language === bookData.language &&
-      existing.category_id === bookData.categoryId &&
-      existing.price === bookData.price &&
-      existing.description === bookData.description &&
-      existing.cover_image_url === (bookData.coverImageUrl || null)
-    ) {
-      throw { status: 400, message: 'Details are the same; cannot be updated' };
-    }
-
-    const duplicateId = await checkBookExists(
-      bookData.title,
-      bookData.author,
-      bookData.publisher,
-      bookData.isbn,
-      bookData.language,
-      bookData.categoryId,
-      connection
-    );
-
-    if (duplicateId && duplicateId !== Number(bookId)) {
-      throw { status: 409, message: 'Same book details already exist. Cannot update to duplicate details.' };
-    }
-
-    const updatedBooks = await callProcedure(
-      'sp_books_update',
+    const updatedRows = await callProcedure(
+      'update_book_details',
       [
+        Number(loggedUserId),
         Number(bookId),
         bookData.title,
         bookData.author,
@@ -120,39 +207,97 @@ const updateBook = async (bookId, bookData) => {
         bookData.isbn || null,
         bookData.language,
         bookData.price,
-        bookData.description,
-        bookData.categoryId,
+        bookData.description || null,
+        categoryName,
         bookData.coverImageUrl || null,
       ],
       connection
     );
 
-    return updatedBooks[0];
+    const updatedResult = updatedRows[0] || {};
+    const statusMessage = updatedResult.status_message || '';
+    const message = updatedResult.message || '';
+
+    if (message) {
+      const lowerMessage = String(message).toLowerCase();
+      if (lowerMessage.includes('book not found')) {
+        throw { status: 404, message };
+      }
+      if (lowerMessage.includes('access denied')) {
+        throw { status: 403, message };
+      }
+      if (lowerMessage.includes('unauthorized')) {
+        throw { status: 401, message };
+      }
+      throw { status: 400, message };
+    }
+
+    if (/no changes detected/i.test(statusMessage)) {
+      throw { status: 400, message: statusMessage };
+    }
+
+    return getBookById(bookId, connection);
   } finally {
     connection.release();
   }
 };
 
-const deleteBook = async (bookId, hardDelete = false) => {
-  const connection = await pool.getConnection();
-  
-  try {
-    const books = await callProcedure('sp_books_exists_active', [bookId], connection);
+const deleteBook = async (bookId, loggedUserId) => {
+  const rows = await callProcedure('delete_book', [Number(loggedUserId), Number(bookId)]);
+  const result = rows[0] || {};
+  const message = result.message || 'Book deleted successfully';
+  const lowerMessage = String(message).toLowerCase();
 
-    if (books.length === 0) {
-      throw { status: 404, message: 'Book not found' };
+  if (!lowerMessage.includes('success')) {
+    if (lowerMessage.includes('book not found')) {
+      throw { status: 404, message };
     }
-
-    if (hardDelete) {
-      await callProcedure('sp_books_hard_delete', [bookId], connection);
-    } else {
-      await callProcedure('sp_books_soft_delete', [bookId], connection);
+    if (lowerMessage.includes('access denied')) {
+      throw { status: 403, message };
     }
-
-    return { message: 'Book deleted successfully' };
-  } finally {
-    connection.release();
+    if (lowerMessage.includes('invalid or inactive')) {
+      throw { status: 401, message };
+    }
+    throw { status: 400, message };
   }
+
+  return { message };
+};
+
+const searchBooks = async (queryText) => {
+  const rows = await callProcedure('multi_search', [queryText || '']);
+
+  return rows.map((row) => ({
+    id: Number(row.book_id),
+    title: row.title,
+    author: row.author_name,
+    category_name: row.category_name || null,
+    available_copies: Number(row.available_copies || 0),
+    total_copies: Number(row.total_copies || 0),
+  }));
+};
+
+const getBookAvailability = async () => {
+  const [rows] = await pool.query(
+    `
+      SELECT
+        book_id AS id,
+        title,
+        total_copies,
+        available_copies,
+        unavailable_copies
+      FROM vw_book_availability
+      ORDER BY title ASC
+    `
+  );
+
+  return rows.map((row) => ({
+    id: Number(row.id),
+    title: row.title,
+    total_copies: Number(row.total_copies || 0),
+    available_copies: Number(row.available_copies || 0),
+    unavailable_copies: Number(row.unavailable_copies || 0),
+  }));
 };
 
 module.exports = {
@@ -161,5 +306,6 @@ module.exports = {
   getBookById,
   updateBook,
   deleteBook,
-  checkBookExists,
+  searchBooks,
+  getBookAvailability,
 };

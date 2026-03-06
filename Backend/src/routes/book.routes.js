@@ -7,6 +7,7 @@ const {
   update,
   deleteOne,
   searchSuggestions,
+  availability,
 } = require('../controllers/book.controller');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/role');
@@ -14,6 +15,7 @@ const roleMiddleware = require('../middleware/role');
 // Public routes
 router.get('/', getAll);
 router.get('/suggest', searchSuggestions);
+router.get('/availability', availability);
 router.get('/:id', getById);
 
 // Admin only routes

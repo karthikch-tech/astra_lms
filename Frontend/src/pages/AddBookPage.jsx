@@ -4,15 +4,6 @@ import { api } from "../config/api";
 import styles from "./AddBookPage.module.css";
 
 const MAX_IMAGE_FILE_BYTES = 12 * 1024 * 1024;
-const COPY_BATCH_SIZE = 100;
-
-const toBatches = (items, batchSize) => {
-  const batches = [];
-  for (let index = 0; index < items.length; index += batchSize) {
-    batches.push(items.slice(index, index + batchSize));
-  }
-  return batches;
-};
 
 function AddBookPage() {
   const navigate = useNavigate();
@@ -94,6 +85,8 @@ function AddBookPage() {
 
     setLoading(true);
     try {
+      const copiesCount = Number(form.copiesCount || 0);
+
       const created = await api.books.create({
         title: form.title,
         author: form.author,
@@ -104,21 +97,18 @@ function AddBookPage() {
         price: Number(form.price),
         description: form.description,
         coverImageUrl: form.coverImageUrl || null,
+        copiesCount,
       });
 
-      const copiesCount = Number(form.copiesCount || 0);
-      if (copiesCount > 0) {
-        const copyIds = Array.from({ length: copiesCount }).map(
-          (_, index) => `BOOK-${created.book.id}-COPY-${Date.now()}-${index + 1}`
-        );
-        const copyBatches = toBatches(copyIds, COPY_BATCH_SIZE);
+      const copies = Array.isArray(created.copyResults) ? created.copyResults : [];
+      const successCount = copies.filter((item) => item?.status !== "FAILED").length;
+      const failedItems = copies.filter((item) => item?.status === "FAILED");
+      const failedText = failedItems.length > 0
+        ? `\nFailed copy IDs: ${failedItems.map((item) => item.copyCode || item.copy_code || "N/A").join(", ")}`
+        : "";
+      const createdCopiesText = `Copies created: ${successCount}/${copies.length || 0}${failedText}`;
 
-        for (const copyBatch of copyBatches) {
-          await api.copies.addToBook(created.book.id, copyBatch);
-        }
-      }
-
-      alert("Book added successfully");
+      alert(`Book added successfully.\nBook Serial Number: ${created.book.id}\n${createdCopiesText}`);
       navigate("/admin/books");
     } catch (error) {
       alert(error.message || "Failed to add book");
@@ -215,7 +205,7 @@ function AddBookPage() {
             type="number"
             min="0"
             name="copiesCount"
-            placeholder="Initial Copies"
+            placeholder="Initial Copies (auto ID)"
             value={form.copiesCount}
             onChange={handleChange}
           />

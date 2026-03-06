@@ -4,7 +4,10 @@ const {
   getBookById,
   updateBook,
   deleteBook,
+  searchBooks,
+  getBookAvailability,
 } = require('../services/book.service');
+const { addBookCopies } = require('../services/copy.service');
 const { persistCoverImage } = require('../utils/coverImage');
 
 const hasValidCreateOrUpdatePayload = (payload) => {
@@ -28,13 +31,25 @@ const hasValidCreateOrUpdatePayload = (payload) => {
 
 const create = async (req, res, next) => {
   try {
-    const { title, author, publisher, isbn, language, price, description, categoryId, coverImageUrl } = req.body;
+    const {
+      title,
+      author,
+      publisher,
+      isbn,
+      language,
+      price,
+      description,
+      categoryId,
+      coverImageUrl,
+      copiesCount,
+    } = req.body;
 
     if (!hasValidCreateOrUpdatePayload({ title, author, publisher, language, price, categoryId })) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const resolvedCoverImageUrl = await persistCoverImage(coverImageUrl, req);
+    const loggedUserId = req.user?.id;
 
     const book = await createBook({
       title,
@@ -46,9 +61,19 @@ const create = async (req, res, next) => {
       description,
       categoryId: Number(categoryId),
       coverImageUrl: resolvedCoverImageUrl,
-    });
+    }, loggedUserId);
 
-    res.status(201).json({ message: 'Book created successfully', book });
+    const normalizedCopiesCount = Number(copiesCount || 0);
+    const copyPayload = normalizedCopiesCount > 0
+      ? Array.from({ length: normalizedCopiesCount }, () => null)
+      : [];
+
+    let copyResults = [];
+    if (copyPayload.length > 0) {
+      copyResults = await addBookCopies(book.id, copyPayload, loggedUserId);
+    }
+
+    res.status(201).json({ message: 'Book created successfully', book, copyResults });
   } catch (error) {
     next(error);
   }
@@ -90,6 +115,7 @@ const update = async (req, res, next) => {
     }
 
     const resolvedCoverImageUrl = await persistCoverImage(coverImageUrl, req);
+    const loggedUserId = req.user?.id;
 
     const book = await updateBook(id, {
       title,
@@ -101,7 +127,7 @@ const update = async (req, res, next) => {
       description,
       categoryId: Number(categoryId),
       coverImageUrl: resolvedCoverImageUrl,
-    });
+    }, loggedUserId);
 
     res.status(200).json({ message: 'Book updated successfully', book });
   } catch (error) {
@@ -112,9 +138,9 @@ const update = async (req, res, next) => {
 const deleteOne = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { hard } = req.query;
+    const loggedUserId = req.user?.id;
 
-    await deleteBook(id, hard === 'true');
+    await deleteBook(id, loggedUserId);
     res.status(200).json({ message: 'Book deleted successfully' });
   } catch (error) {
     next(error);
@@ -129,7 +155,7 @@ const searchSuggestions = async (req, res, next) => {
       return res.status(400).json({ message: 'Query must be at least 2 characters' });
     }
 
-    const books = await getAllBooks({ title: q });
+    const books = await searchBooks(q);
     const suggestions = books.map(b => ({
       id: b.id,
       title: b.title,
@@ -142,6 +168,15 @@ const searchSuggestions = async (req, res, next) => {
   }
 };
 
+const availability = async (req, res, next) => {
+  try {
+    const rows = await getBookAvailability();
+    res.status(200).json(rows);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   create,
   getAll,
@@ -149,4 +184,5 @@ module.exports = {
   update,
   deleteOne,
   searchSuggestions,
+  availability,
 };

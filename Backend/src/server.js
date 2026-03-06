@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 const errorMiddleware = require('./middleware/error');
 const apiKeyMiddleware = require('./middleware/apiKey');
 const db = require('./config/db');

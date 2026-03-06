@@ -4,6 +4,8 @@ import AppContext from "../context/AppContext";
 import { api } from "../config/api";
 import "./bookdetails.css";
 
+const COPY_ID_PATTERN = /^\d+$/;
+
 const nextStatus = (currentStatus) => {
   if (String(currentStatus || "").toUpperCase() === "AVAILABLE") {
     return "UNAVAILABLE";
@@ -16,6 +18,11 @@ const toAvailabilityStatus = (status) =>
 
 const toStatusClassName = (status) =>
   toAvailabilityStatus(status) === "AVAILABLE" ? "available" : "unavailable";
+
+const isValidCopyIdInput = (value) => {
+  const normalized = String(value || "").trim();
+  return COPY_ID_PATTERN.test(normalized);
+};
 
 function BookDetails() {
   const { id } = useParams();
@@ -58,12 +65,19 @@ function BookDetails() {
   );
 
   const handleAddCopy = async () => {
-    if (!newCopyCode.trim()) {
+    const normalizedCopyId = newCopyCode.trim();
+
+    if (!normalizedCopyId) {
+      return;
+    }
+
+    if (!isValidCopyIdInput(normalizedCopyId)) {
+      alert("Copy ID must be a positive number");
       return;
     }
 
     try {
-      await api.copies.addToBook(id, [newCopyCode.trim()]);
+      await api.copies.addToBook(id, [normalizedCopyId]);
       setNewCopyCode("");
       await loadBookData();
     } catch (error) {
@@ -93,7 +107,12 @@ function BookDetails() {
   const handleSaveCopyCode = async (copyId) => {
     const normalizedCopyCode = editingCopyCode.trim();
     if (!normalizedCopyCode) {
-      alert("Copy code is required");
+      alert("Copy ID is required");
+      return;
+    }
+
+    if (!isValidCopyIdInput(normalizedCopyCode)) {
+      alert("Copy ID must be a positive number");
       return;
     }
 
@@ -218,7 +237,7 @@ function BookDetails() {
               <div className="copy-box">
                 <input
                   type="text"
-                  placeholder="Enter Copy Code"
+                  placeholder="Enter Copy ID (number)"
                   value={newCopyCode}
                   onChange={(event) => setNewCopyCode(event.target.value)}
                 />

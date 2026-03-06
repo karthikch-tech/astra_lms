@@ -114,6 +114,11 @@
   font-size: 14px;
 }
 
+.form select option {
+  color: #ffffff;
+  background: #3b3048;
+}
+
 .addCategoryButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;

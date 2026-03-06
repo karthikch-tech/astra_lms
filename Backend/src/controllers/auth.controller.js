@@ -1,4 +1,9 @@
-const { registerUser, loginUser, getUserById } = require('../services/auth.service');
+const {
+  registerUser,
+  loginUser,
+  getUserById,
+  updateMyProfile,
+} = require('../services/auth.service');
 
 const getRegistrationPayload = (req) => {
   const {
@@ -120,9 +125,37 @@ const getMe = async (req, res, next) => {
   }
 };
 
+const updateMe = async (req, res, next) => {
+  try {
+    const userId = req.user?.userId ?? req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { currentPassword, firstName, lastName, username, email, password } = req.body;
+    if (!currentPassword) {
+      return res.status(400).json({ message: 'Current password is required' });
+    }
+
+    const result = await updateMyProfile(userId, {
+      currentPassword: String(currentPassword),
+      firstName: firstName ? String(firstName).trim() : null,
+      lastName: lastName ? String(lastName).trim() : null,
+      username: username ? String(username).trim().toLowerCase() : null,
+      email: email ? String(email).trim().toLowerCase() : null,
+      password: password ? String(password) : null,
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   register,
   registerAdmin,
   login,
   getMe,
+  updateMe,
 };
