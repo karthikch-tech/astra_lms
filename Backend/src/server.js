@@ -3,7 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config();
+
 const errorMiddleware = require('./middleware/error');
 const apiKeyMiddleware = require('./middleware/apiKey');
 const db = require('./config/db');
@@ -29,7 +30,6 @@ const corsOptions = allowedOrigins.length
         if (!origin || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
-
         return callback(new Error('Not allowed by CORS'));
       },
       credentials: true,
@@ -40,6 +40,28 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// Initialize DB once
+let isDbInitialized = false;
+
+const initializeApp = async () => {
+  if (!isDbInitialized) {
+    await db.initializeDatabase();
+    isDbInitialized = true;
+    console.log('Database initialized successfully');
+  }
+};
+
+// DB init middleware must come BEFORE routes
+app.use(async (req, res, next) => {
+  try {
+    await initializeApp();
+    next();
+  } catch (error) {
+    console.error('Failed to initialize app:', error.message);
+    res.status(500).json({ message: 'Server initialization failed' });
+  }
+});
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ message: 'API is running' });
@@ -58,18 +80,18 @@ app.use((req, res) => {
 
 app.use(errorMiddleware);
 
-const startServer = async () => {
-  try {
-    await db.initializeDatabase();
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+// Local development lo maatrame listen cheyyali
+if (process.env.VERCEL !== '1') {
+  initializeApp()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error('Failed to start server:', error.message);
+      process.exit(1);
     });
-  } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
-  }
-};
-
-startServer();
+}
 
 module.exports = app;
