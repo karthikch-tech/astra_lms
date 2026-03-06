@@ -1,4 +1,4 @@
-const errorMiddleware = (err, req, res, next) => {
+const errormiddleware = (err, req, res, next) => {
   console.error('Error:', err.message);
 
   if (err.status === 413 || err.statusCode === 413 || err.type === 'entity.too.large') {
@@ -13,4 +13,4 @@ const errorMiddleware = (err, req, res, next) => {
   });
 };
 
-module.exports = errorMiddleware;
+module.exports = errormiddleware;
