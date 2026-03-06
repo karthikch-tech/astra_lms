@@ -5,15 +5,15 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const errorMiddleware = require('./middleware/error');
-const apiKeyMiddleware = require('./middleware/apiKey');
-const db = require('./config/db');
+const errorMiddleware = require('./src/middleware/error');
+const apiKeyMiddleware = require('./src/middleware/apiKey');
+const db = require('./src/config/db');
 
-const authRoutes = require('./routes/auth.routes');
-const bookRoutes = require('./routes/book.routes');
-const categoryRoutes = require('./routes/category.routes');
-const copyRoutes = require('./routes/copy.routes');
-const userRoutes = require('./routes/user.routes');
+const authRoutes = require('./src/routes/auth.routes');
+const bookRoutes = require('./src/routes/book.routes');
+const categoryRoutes = require('./src/routes/category.routes');
+const copyRoutes = require('./src/routes/copy.routes');
+const userRoutes = require('./src/routes/user.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,41 +34,56 @@ const corsOptions = allowedOrigins.length
       },
       credentials: true,
     }
-  : {};
+  : {
+      origin: true,
+      credentials: true,
+    };
 
 app.use(cors(corsOptions));
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health route should come BEFORE DB init middleware
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ message: 'API is running' });
+  res.status(200).json({
+    success: true,
+    message: 'API is running',
+  });
 });
 
-// Initialize DB once
-let isDbInitialized = false;
+let dbInitializationPromise = null;
 
 const initializeApp = async () => {
-  if (!isDbInitialized) {
-    await db.initializeDatabase();
-    isDbInitialized = true;
-    console.log('Database initialized successfully');
+  if (!dbInitializationPromise) {
+    dbInitializationPromise = db
+      .initializeDatabase()
+      .then(() => {
+        console.log('✅ Database initialized successfully');
+      })
+      .catch((error) => {
+        dbInitializationPromise = null;
+        throw error;
+      });
   }
+
+  return dbInitializationPromise;
 };
 
-// DB init middleware AFTER health route
 app.use(async (req, res, next) => {
   try {
     await initializeApp();
     next();
   } catch (error) {
-    console.error('Failed to initialize app:', error.message);
-    res.status(500).json({ message: 'Server initialization failed' });
+    console.error('❌ Failed to initialize app:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Server initialization failed',
+    });
   }
 });
 
 app.use('/api', apiKeyMiddleware);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -76,7 +91,10 @@ app.use('/api/copies', copyRoutes);
 app.use('/api/users', userRoutes);
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
 });
 
 app.use(errorMiddleware);
@@ -85,11 +103,11 @@ if (process.env.VERCEL !== '1') {
   initializeApp()
     .then(() => {
       app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`🚀 Server running on port ${PORT}`);
       });
     })
     .catch((error) => {
-      console.error('Failed to start server:', error.message);
+      console.error('❌ Failed to start server:', error.message);
       process.exit(1);
     });
 }
