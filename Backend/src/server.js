@@ -41,6 +41,11 @@ app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// Health route should come BEFORE DB init middleware
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ message: 'API is running' });
+});
+
 // Initialize DB once
 let isDbInitialized = false;
 
@@ -52,7 +57,7 @@ const initializeApp = async () => {
   }
 };
 
-// DB init middleware must come BEFORE routes
+// DB init middleware AFTER health route
 app.use(async (req, res, next) => {
   try {
     await initializeApp();
@@ -61,10 +66,6 @@ app.use(async (req, res, next) => {
     console.error('Failed to initialize app:', error.message);
     res.status(500).json({ message: 'Server initialization failed' });
   }
-});
-
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ message: 'API is running' });
 });
 
 app.use('/api', apiKeyMiddleware);
@@ -80,7 +81,6 @@ app.use((req, res) => {
 
 app.use(errorMiddleware);
 
-// Local development lo maatrame listen cheyyali
 if (process.env.VERCEL !== '1') {
   initializeApp()
     .then(() => {

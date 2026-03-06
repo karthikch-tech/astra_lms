@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const mysql = require("mysql2/promise");
+const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
 
 const backendEnvPath = path.resolve(__dirname, '..', '..', '.env');
@@ -17,12 +17,15 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  connectTimeout: 10000,
 });
 
 const getRequiredDbConfig = () => ({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
 const PROCEDURE_PARAM_COUNTS = Object.freeze({
@@ -48,11 +51,10 @@ const OUT_PROCEDURE_INPUT_COUNTS = Object.freeze({
 });
 
 const getProcedureCallSql = (procedureName, paramCount) => {
-  const placeholders = paramCount > 0 ? new Array(paramCount).fill("?").join(", ") : "";
+  const placeholders = paramCount > 0 ? new Array(paramCount).fill('?').join(', ') : '';
   return `CALL ${procedureName}(${placeholders})`;
 };
 
-// ✅ Better: use query() for CALL procedures and normalize resultsets
 const callProcedure = async (procedureName, params = [], executor = pool) => {
   const expectedParamCount = PROCEDURE_PARAM_COUNTS[procedureName];
 
@@ -69,13 +71,11 @@ const callProcedure = async (procedureName, params = [], executor = pool) => {
   const sql = getProcedureCallSql(procedureName, expectedParamCount);
   const [rows] = await executor.query(sql, params);
 
-  // rows for CALL is typically: [ [resultRows], ... ] OR [] OR OkPacket-like
   if (!Array.isArray(rows)) return [];
-  if (Array.isArray(rows[0])) return rows[0]; // first resultset
+  if (Array.isArray(rows[0])) return rows[0];
   return rows;
 };
 
-// ✅ OUT params must run on same connection (session variables!)
 const callProcedureWithOutParams = async (
   procedureName,
   inputParams = [],
@@ -94,12 +94,12 @@ const callProcedureWithOutParams = async (
     );
   }
 
-  const canCreateConnection = typeof executor?.getConnection === "function";
+  const canCreateConnection = typeof executor?.getConnection === 'function';
   const conn = canCreateConnection ? await executor.getConnection() : executor;
+
   try {
     const outVariables = outParamNames.map((name) => `@${name}`);
-
-    const allPlaceholders = [...inputParams.map(() => "?"), ...outVariables].join(", ");
+    const allPlaceholders = [...inputParams.map(() => '?'), ...outVariables].join(', ');
     const callSql = `CALL ${procedureName}(${allPlaceholders})`;
 
     await conn.query(callSql, inputParams);
@@ -108,12 +108,12 @@ const callProcedureWithOutParams = async (
 
     const selectSql = `SELECT ${outVariables
       .map((variable, index) => `${variable} AS ${outParamNames[index]}`)
-      .join(", ")}`;
+      .join(', ')}`;
 
     const [rows] = await conn.query(selectSql);
     return rows?.[0] || {};
   } finally {
-    if (canCreateConnection && typeof conn?.release === "function") {
+    if (canCreateConnection && typeof conn?.release === 'function') {
       conn.release();
     }
   }
@@ -121,6 +121,7 @@ const callProcedureWithOutParams = async (
 
 const initializeDatabase = async () => {
   const requiredConfig = getRequiredDbConfig();
+
   const missingConfigKeys = Object.entries(requiredConfig)
     .filter(([_, value]) => !value)
     .map(([key]) => key);
@@ -129,17 +130,35 @@ const initializeDatabase = async () => {
     throw new Error(`Missing DB environment variables: ${missingConfigKeys.join(', ')}`);
   }
 
-  const connection = await pool.getConnection();
+  let connection;
+
   try {
+    console.log('DB config check:', {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      user: process.env.DB_USER,
+      database: process.env.DB_NAME,
+      hasPassword: Boolean(process.env.DB_PASSWORD),
+    });
+
+    connection = await pool.getConnection();
     await connection.ping();
-    console.log("✅ Database connected");
+    console.log('✅ Database connected successfully');
+  } catch (error) {
+    console.error('❌ Database initialization error:', {
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      sqlState: error.sqlState,
+    });
+    throw error;
   } finally {
-    connection.release();
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
-// Backward-compatible export style:
-// const pool = require('../config/db')
 module.exports = pool;
 module.exports.callProcedure = callProcedure;
 module.exports.callProcedureWithOutParams = callProcedureWithOutParams;
