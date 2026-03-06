@@ -39,6 +39,7 @@ const corsOptions = allowedOrigins.length
       credentials: true,
     };
 
+const cors = require("cors");
 app.use(cors(corsOptions));
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
