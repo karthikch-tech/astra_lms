@@ -12,20 +12,29 @@ function Login() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!identifier || !password) {
       alert("Please fill all fields");
       return;
     }
 
-    login({
-      username: identifier,
-      isAdmin: isAdminLogin
-    });
+    try {
+      setLoading(true);
 
-    // ✅ AFTER LOGIN → GO TO HOME (USER) OR ADMIN DASHBOARD
-    navigate(isAdminLogin ? "/admin/dashboard" : "/home");
+      await login({
+        identifier,
+        password,
+        isAdmin: isAdminLogin,
+      });
+
+      navigate(isAdminLogin ? "/admin/dashboard" : "/home");
+    } catch (error) {
+      alert(error.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,11 +57,10 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button className="auth-btn" onClick={handleLogin}>
-            Login
+          <button className="auth-btn" onClick={handleLogin} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
 
-          {/* ✅ ONLY ADMIN CAN REGISTER */}
           {isAdminLogin && (
             <p>
               Don’t have an admin account?{" "}
